@@ -13,13 +13,13 @@ HID layer code is based on Matthew Heironimus' <Joystick.h> library.
 
 # Supported devices
 
-This code has been tested on Arduino Due and Leonardo.
+This code has been tested on Arduino Due, Leonardo, and Pro Micro.
 
-Arduino Due is recommended because it is 3.3v logic.
+Arduino Due is recommended because it is 3.3v logic (or Pro Micro in 3.3v mode).
 According to the PN5180 datasheet, a 5v<->3.3v level shifter is required
 for use an Arduino Leonardo. However, I tested without it and everything
 was working properly, and my PN5180 is not fried. I still recommend a Due
-just in case.
+or a 3.3V pro micro just in case.
 
 # Pinout
 
@@ -42,14 +42,15 @@ BUSY,9  |       <---     |        BUSY
 Reset,7 | HV2 - LV2      | RST
 
 Please refer to your Arduino pinout to find SCK, MISO and MOSI pins
-(on Due and Leonardo they are on the SPI / ICSP header)
+(on Due and Leonardo they are on the SPI / ICSP header, on Pro Micro
+they are pins 15 (SCK),14 (MISO),16 (MOSI))
 
 Unlike the other pins, NSS BUSY and RST can be moved to other gpios
 if you need to.
 
 # How to use
 
-Download zip, connect the PN5180 to the Arduino, flash the firmware.
+Download zip, flash the firmware, unplug, connect the PN5180 to the Arduino.
 
 Congratulations, your device should work just like a real cardio, use 
 your favorite tools instructions to play (e.g. "spicetools -cardio" ).
