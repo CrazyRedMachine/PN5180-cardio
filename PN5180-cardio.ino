@@ -47,6 +47,8 @@
 #include "src/PN5180/PN5180FeliCa.h"
 #include "src/PN5180/PN5180ISO15693.h"
 #include "src/Cardio.h"
+#include <Keypad.h>
+#include <Keyboard.h>
 
 #define PN5180_NSS  10
 #define PN5180_BUSY 9
@@ -56,8 +58,28 @@ PN5180FeliCa nfcFeliCa(PN5180_NSS, PN5180_BUSY, PN5180_RST);
 PN5180ISO15693 nfc15693(PN5180_NSS, PN5180_BUSY, PN5180_RST);
 
 Cardio_ Cardio;
+
+/* Keypad declarations */
+const byte ROWS = 4;
+const byte COLS = 3;
+/* This is to use the toprow keys */
+char numpad[ROWS][COLS] = {
+  {'7', '8', '9'},
+  {'4', '5', '6'},
+  {'1', '2', '3'},
+  {'0', ',', '\337'}
+};
+
+/* For mini keypad */
+byte rowPins[ROWS] = {1, 6, 5, 3}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {2, 0, 4}; //connect to the column pinouts of the keypad
+Keypad kpd = Keypad( makeKeymap(numpad), rowPins, colPins, ROWS, COLS );
  
 void setup() {
+/* Keypad */
+  kpd.setDebounceTime(10);
+  Keyboard.begin();
+/* NFC */
   nfcFeliCa.begin();
   nfcFeliCa.reset();
 
@@ -77,27 +99,38 @@ void setup() {
 }
 
 uint32_t loopCnt = 0;
-
+unsigned long lastReport = 0;
+int cardBusy = 0;
 
 // read cards loop
 void loop() {
+  /* KEYPAD */
+  keypadCheck();
+  
+  /* NFC */
+  if (millis()-lastReport < cardBusy) return;
+  
+  cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
 
   // check for FeliCa card
   nfcFeliCa.reset();
+  keypadCheck();
   nfcFeliCa.setupRF();
   uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
     if (uidLength > 0) {
       Cardio.setUID(2, uid);
       Cardio.sendState();
-      delay(3000); 
+      lastReport = millis();
+      cardBusy = 3000;
       uidLength = 0;
       return;
     }
 
    // check for ISO-15693 card
   nfc15693.reset();
+  keypadCheck();
   nfc15693.setupRF();
   // try to read ISO15693 inventory
   ISO15693ErrorCode rc = nfc15693.getInventory(uid);
@@ -107,9 +140,37 @@ void loop() {
     }
     Cardio.setUID(1, hid_data);
     Cardio.sendState();
-    delay(3000); 
+      lastReport = millis();
+      cardBusy = 3000;
     return;
   }
   // no card detected
-  delay(200); 
+  lastReport = millis();
+  cardBusy = 200;
+}
+
+void keypadCheck(){
+    if (kpd.getKeys())
+  {
+    for (int i = 0; i < LIST_MAX; i++) // Scan the whole key list.
+    {
+      if ( kpd.key[i].stateChanged )   // Only find keys that have changed state.
+      {
+        switch (kpd.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
+          case PRESSED:
+            Keyboard.press(kpd.key[i].kchar);
+            break;
+          case HOLD:
+            break;
+          case RELEASED:
+            Keyboard.release(kpd.key[i].kchar);
+            break;
+          case IDLE:
+            break;
+        }
+
+      }
+    }
+  }
+  
 }
