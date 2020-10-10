@@ -37,9 +37,9 @@ GND     | GND (HV) | .
 SCLK    | HV1 - LV1       | SCLK
 MISO      |     <---        | MISO
 MOSI    | HV3 - LV3       | MOSI
-SS,10   | HV4 - LV4      | NSS (=Not SS -> active LOW)
-BUSY,9  |       <---     |        BUSY
-Reset,7 | HV2 - LV2      | RST
+10   | HV4 - LV4      | NSS (=Not SS -> active LOW)
+9  |       <---     |        BUSY
+7 | HV2 - LV2      | RST
 
 Please refer to your Arduino pinout to find SCK, MISO and MOSI pins
 (on Due and Leonardo they are on the SPI / ICSP header, on Pro Micro
