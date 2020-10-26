@@ -1,4 +1,4 @@
-# PN5180-cardio (keypad-matrix version)
+# PN5180-cardio (with keypad-matrix support)
 PN5180 eAmusement wavepass USB HID card reader (cardio) with integrated keypad
 
 # Acknowledgments
