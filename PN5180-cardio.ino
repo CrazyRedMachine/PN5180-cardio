@@ -43,12 +43,18 @@
 // Reset,7 <-> HV2 - LV2       --> RST
 //
 
+//Set to 0 to disable keypad matrix
+#define WITH_KEYPAD 1
+
 #include "src/PN5180/PN5180.h"
 #include "src/PN5180/PN5180FeliCa.h"
 #include "src/PN5180/PN5180ISO15693.h"
 #include "src/Cardio.h"
-#include <Keypad.h>
-#include <Keyboard.h>
+
+#if WITH_KEYPAD == 1
+  #include <Keypad.h>
+  #include <Keyboard.h>
+#endif
 
 #define PN5180_NSS  10
 #define PN5180_BUSY 9
@@ -59,26 +65,31 @@ PN5180ISO15693 nfc15693(PN5180_NSS, PN5180_BUSY, PN5180_RST);
 
 Cardio_ Cardio;
 
-/* Keypad declarations */
-const byte ROWS = 4;
-const byte COLS = 3;
-/* This is to use the toprow keys */
-char numpad[ROWS][COLS] = {
-  {'7', '8', '9'},
-  {'4', '5', '6'},
-  {'1', '2', '3'},
-  {'0', ',', '\337'}
-};
+#if WITH_KEYPAD == 1
+  /* Keypad declarations */
+  const byte ROWS = 4;
+  const byte COLS = 3;
+  /* This is to use the toprow keys */
+  char numpad[ROWS][COLS] = {
+   {'7', '8', '9'},
+   {'4', '5', '6'},
+   {'1', '2', '3'},
+   {'0', ',', '\337'}
+  };
 
-/* For mini keypad */
-byte rowPins[ROWS] = {1, 6, 5, 3}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {2, 0, 4}; //connect to the column pinouts of the keypad
-Keypad kpd = Keypad( makeKeymap(numpad), rowPins, colPins, ROWS, COLS );
+  byte rowPins[ROWS] = {1, 6, 5, 3}; //connect to the row pinouts of the keypad
+  byte colPins[COLS] = {2, 0, 4}; //connect to the column pinouts of the keypad
+  Keypad kpd = Keypad( makeKeymap(numpad), rowPins, colPins, ROWS, COLS );
+#endif
  
 void setup() {
-/* Keypad */
-  kpd.setDebounceTime(10);
-  Keyboard.begin();
+
+#if WITH_KEYPAD == 1
+  /* Keypad */
+    kpd.setDebounceTime(10);
+    Keyboard.begin();
+#endif
+
 /* NFC */
   nfcFeliCa.begin();
   nfcFeliCa.reset();
@@ -104,8 +115,10 @@ int cardBusy = 0;
 
 // read cards loop
 void loop() {
+#if WITH_KEYPAD == 1
   /* KEYPAD */
   keypadCheck();
+#endif
   
   /* NFC */
   if (millis()-lastReport < cardBusy) return;
@@ -116,7 +129,9 @@ void loop() {
 
   // check for FeliCa card
   nfcFeliCa.reset();
+#if WITH_KEYPAD == 1
   keypadCheck();
+#endif
   nfcFeliCa.setupRF();
   uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
     if (uidLength > 0) {
@@ -130,7 +145,9 @@ void loop() {
 
    // check for ISO-15693 card
   nfc15693.reset();
+#if WITH_KEYPAD == 1
   keypadCheck();
+#endif
   nfc15693.setupRF();
   // try to read ISO15693 inventory
   ISO15693ErrorCode rc = nfc15693.getInventory(uid);
@@ -149,6 +166,7 @@ void loop() {
   cardBusy = 200;
 }
 
+#if WITH_KEYPAD == 1
 void keypadCheck(){
     if (kpd.getKeys())
   {
@@ -174,3 +192,4 @@ void keypadCheck(){
   }
   
 }
+#endif
