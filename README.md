@@ -1,5 +1,5 @@
-# PN5180-cardio (with keypad-matrix support)
-PN5180 eAmusement wavepass USB HID card reader (cardio) with integrated keypad
+# PN5180-cardio (with optional keypad-matrix)
+PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad
 
 # Acknowledgments
 
@@ -11,7 +11,7 @@ FeliCa code is inspired by [tueddy/PN5180-Library/ISO14443](https://github.com/t
 
 HID layer code is based on Matthew Heironimus' <Joystick.h> library.
 
-The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
+(optional) The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
 
 # Supported devices
 
@@ -55,9 +55,15 @@ if you need to.
 Connect the row pins to gpio 1 6 5 3.
 Connect the column pins to gpio 2 0 4.
 
+If you want to use the keypad, you have to set `#define WITH_KEYPAD 1` in PN5180-cardio.ino at line 47, and install Keypad library by Stanley and Brevig (can be installed directly from Arduino IDE library manager).
+
 # How to use
 
-Download zip, install Keypad library by Stanley and Brevig directly from Arduino IDE, flash the firmware, unplug, connect the PN5180 and keypad to the Arduino.
+- Download zip
+- (optional) set `#define WITH_KEYPAD 1` (PN5180-cardio.ino line 47) and install Keypad library by Stanley and Brevig directly from Arduino IDE
+- flash the firmware
+- unplug the arduino
+- connect the PN5180 and keypad to the Arduino.
 
 Congratulations, your device should work just like a real cardio, use 
 your favorite tools instructions to play (e.g. "spicetools -cardio" ),
