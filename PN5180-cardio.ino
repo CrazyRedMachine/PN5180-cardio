@@ -43,8 +43,8 @@
 // Reset,7 <-> HV2 - LV2       --> RST
 //
 
-//Set to 0 to disable keypad matrix
-#define WITH_KEYPAD 1
+//Set to 1 to enable keypad matrix
+#define WITH_KEYPAD 0
 
 #include "src/PN5180/PN5180.h"
 #include "src/PN5180/PN5180FeliCa.h"
