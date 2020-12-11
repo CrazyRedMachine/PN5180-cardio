@@ -36,7 +36,7 @@ GND    |        <-->      |       GND
 GND     | GND (HV) | .
  .        |   LV              | 3.3V
   .      |    GND (LV)        | GND
-SCLK    | HV1 - LV1       | SCLK
+SCK    | HV1 - LV1       | SCK
 MISO      |     <---        | MISO
 MOSI    | HV3 - LV3       | MOSI
 10   | HV4 - LV4      | NSS (=Not SS -> active LOW)
