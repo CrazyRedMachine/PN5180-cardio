@@ -1,7 +1,7 @@
 /* USER CONFIGURABLE OPTIONS */
 #define WITH_KEYPAD 0
 #define WITH_USBHID 1
-#define WITH_SPICEAPI 1
+#define WITH_SPICEAPI 0
 //sneaky ISO14443 support (reader will pretend it was a FeliCa)
 #define WITH_ISO14443 0
 
