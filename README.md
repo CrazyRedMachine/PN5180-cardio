@@ -16,8 +16,6 @@ The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
 
 Spiceapi version provided by [goat](https://github.com/goaaats) (thanks! :))
 
-The spiceapi code uses the ArduinoJson library by Benoît Blanchon.
-
 # Supported devices
 
 USBHID code has been tested on Arduino Due, Leonardo, and Pro Micro.
@@ -88,7 +86,7 @@ The keypad should be recognized as an additional USB device.
 ## SPICEAPI
 
 - Download zip
-- set `#define WITH_SPICEAPI 1` (in PN5180-cardio.ino user configurable options) and install ArduinoJson library by Blanchon directly from Arduino IDE
+- set `#define WITH_SPICEAPI 1` (in PN5180-cardio.ino user configurable options)
 - set `SPICEAPI_PASS` accordingly (in PN5180-cardio.ino user configurable options)
 - (optional) set `#define WITH_KEYPAD 1` (in PN5180-cardio.ino user configurable options) and install Keypad library by Stanley and Brevig directly from Arduino IDE
 - flash the firmware
