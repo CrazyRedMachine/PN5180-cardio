@@ -114,7 +114,6 @@ const char* spiceapi::Connection::request(const char* json, size_t timeout) {
 }
 
 const char* spiceapi::Connection::request(char* json_data, size_t timeout) {
-
     // check connection
     if (!this->check())
         return "";

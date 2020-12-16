@@ -1,13 +1,13 @@
 /* === USER CONFIGURABLE OPTIONS === */
 
 /* General usage on boards without USB MCU requires WITH_SPICEAPI instead */
-#define WITH_USBHID 1
+#define WITH_USBHID 0
 
 /* Keypad on boards without USB MCU requires WITH_SPICEAPI */
-#define WITH_KEYPAD 0
+#define WITH_KEYPAD 1
 
 /* Launch game with "-api 1337 -apipass changeme -apiserial COM1 -apiserialbaud 57600" or similar */
-#define WITH_SPICEAPI 0
+#define WITH_SPICEAPI 1
 /* Adjust your serial port here(Serial, Serial1, Serial2, etc.) - WiFi/Network support is possible, but out of scope for this project */
 #define SPICEAPI_INTERFACE Serial
 #define SPICEAPI_BAUD 57600
