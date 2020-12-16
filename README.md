@@ -14,7 +14,7 @@ HID layer code is inspired from Matthew Heironimus' <Joystick.h> library.
 
 The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
 
-Spiceapi version provided by goat (thanks! :))
+Spiceapi version provided by [goat](https://github.com/goaaats) (thanks! :))
 
 The spiceapi code uses the ArduinoJson library by Benoît Blanchon.
 
