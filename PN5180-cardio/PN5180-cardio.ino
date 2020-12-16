@@ -1,59 +1,40 @@
-// NAME: PN5180-CardIO.ino
-//
-// DESC: Implementation of zyp's famous "cardio" using an Arduino and a PN5180-NFC Module
-//       from NXP Semiconductors.
-//
-// Based on PN5180-Library Copyright (c) 2018 by Andreas Trappmann. All rights reserved.
-// Copyright (c) 2020 by CrazyRedMachine.
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public 
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-// Lesser General Public License for more details.
-//
-// BEWARE: SPI with an Arduino to a PN5180 module has to be at a level of 3.3V
-// use of logic-level converters from 5V->3.3V is absolutly neccessary
-// on most Arduinos for all input pins of PN5180!
-// If used with an ESP-32, there is no need for a logic-level converter, since
-// it operates on 3.3V already.
-//
-// ADDITIONAL NOTES BY CrazyRedMachine :
-// I tried to plug directly one of my PN5180 module to an Arduino Leonardo and to
-// an Arduino Mega without any issue. That being said, Arduino Due is probably a 
-// better choice since it supports this code and operates on 3.3V.
-//
-// Arduino <-> Level Converter <-> PN5180 pin mapping:
-// 5V             <-->             5V
-// 3.3V           <-->             3.3V
-// GND            <-->             GND
-// 5V      <-> HV
-// GND     <-> GND (HV)
-//             LV              <-> 3.3V
-//             GND (LV)        <-> GND
-// SCLK,13 <-> HV1 - LV1       --> SCLK
-// MISO,12        <---         <-- MISO
-// MOSI,11 <-> HV3 - LV3       --> MOSI
-// SS,10   <-> HV4 - LV4       --> NSS (=Not SS -> active LOW)
-// BUSY,9         <---             BUSY
-// Reset,7 <-> HV2 - LV2       --> RST
-//
-
-//Set to 1 to enable keypad matrix
+/* USER CONFIGURABLE OPTIONS */
 #define WITH_KEYPAD 0
+#define WITH_USBHID 1
+#define WITH_SPICEAPI 1
+//sneaky ISO14443 support (reader will pretend it was a FeliCa)
+#define WITH_ISO14443 0
 
+/* DO NOT MESS WITH THE LINES BELOW UNLESS YOU KNOW WHAT YOU'RE DOING */
 #include "src/PN5180/PN5180.h"
 #include "src/PN5180/PN5180FeliCa.h"
 #include "src/PN5180/PN5180ISO15693.h"
-#include "src/Cardio.h"
+#if WITH_ISO14443 == 1
+  #include "src/PN5180/PN5180ISO14443.h"
+#endif
+
+#if WITH_USBHID == 1
+  #if !defined(USBCON)
+    #if WITH_SPICEAPI == 0
+      #error WITH_SPICEAPI option is mandatory for non-USB MCU 
+    #endif
+    #warning The USBHID mode can only be used with a USB MCU (e.g. Arduino Leonardo, Arduino Micro, etc.).
+    #define USBHID 0
+  #else
+    #define USBHID 1
+    #include "src/Cardio.h"
+  #endif
+#endif
 
 #if WITH_KEYPAD == 1
-  #include <Keypad.h>
-  #include <Keyboard.h>
+  #if !defined(USBCON)
+    #warn The USB keypad can only be used with a USB MCU (e.g. Arduino Leonardo, Arduino Micro, etc.).
+    #define USBKEYPAD 0
+  #else
+    #define USBKEYPAD 1
+    #include <Keypad.h>
+    #include <Keyboard.h>
+  #endif
 #endif
 
 #define PN5180_NSS  10
@@ -62,8 +43,13 @@
 
 PN5180FeliCa nfcFeliCa(PN5180_NSS, PN5180_BUSY, PN5180_RST);
 PN5180ISO15693 nfc15693(PN5180_NSS, PN5180_BUSY, PN5180_RST);
+#if WITH_ISO14443 == 1
+  PN5180ISO14443 nfc14443(PN5180_NSS, PN5180_BUSY, PN5180_RST);
+#endif
 
-Cardio_ Cardio;
+#if USBHID == 1
+  Cardio_ Cardio;
+#endif
 
 #if WITH_KEYPAD == 1
   /* Keypad declarations */
@@ -106,7 +92,9 @@ void setup() {
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
   nfcFeliCa.setupRF();
 
+#if USBHID == 1
   Cardio.begin(false);
+#endif
 }
 
 uint32_t loopCnt = 0;
@@ -126,6 +114,30 @@ void loop() {
   cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
+  
+#if WITH_ISO14443 == 1
+// check for ISO14443 card
+  nfc14443.reset();
+#if WITH_KEYPAD == 1
+  keypadCheck();
+#endif
+  nfc14443.setupRF();
+  uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
+    if (uidLengthMF > 0) {
+      for (int i=0; i<7; i++) {
+        uid[i] = uid[3+i];
+      }
+      uid[8] = 0;
+#if USBHID == 1     
+      Cardio.setUID(2, uid);
+      Cardio.sendState();
+#endif
+      lastReport = millis();
+      cardBusy = 3000;
+      uidLengthMF = 0;
+      return;
+    }
+#endif
 
   // check for FeliCa card
   nfcFeliCa.reset();
@@ -135,8 +147,10 @@ void loop() {
   nfcFeliCa.setupRF();
   uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
     if (uidLength > 0) {
+#if USBHID == 1
       Cardio.setUID(2, uid);
       Cardio.sendState();
+#endif
       lastReport = millis();
       cardBusy = 3000;
       uidLength = 0;
@@ -155,10 +169,12 @@ void loop() {
     for (int i=0; i<8; i++) {
       hid_data[i] = uid[7-i];
     }
+#if USBHID == 1
     Cardio.setUID(1, hid_data);
     Cardio.sendState();
-      lastReport = millis();
-      cardBusy = 3000;
+#endif
+    lastReport = millis();
+    cardBusy = 3000;
     return;
   }
   // no card detected

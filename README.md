@@ -1,5 +1,6 @@
-# PN5180-cardio (with optional keypad-matrix)
-PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad
+# PN5180-cardio
+
+PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof, Spiceapi integration 
 
 # Acknowledgments
 
@@ -7,21 +8,25 @@ This work is based on zyp's cardio (obviously).
 
 ISO15693 code is based on [ATrappmann/PN5180-Library](https://github.com/ATrappmann/PN5180-Library).
 
-FeliCa code is inspired by [tueddy/PN5180-Library/ISO14443](https://github.com/tueddy/PN5180-Library/tree/ISO14443) ISO14443 implementation.
+ISO14443 implementation taken from [tueddy/PN5180-Library/ISO14443](https://github.com/tueddy/PN5180-Library/tree/ISO14443).
 
-HID layer code is based on Matthew Heironimus' <Joystick.h> library.
+HID layer code is inspired from Matthew Heironimus' <Joystick.h> library.
 
-(optional) The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
+The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
+
+Spiceapi version provided by goat (thanks! :))
 
 # Supported devices
 
-This code has been tested on Arduino Due, Leonardo, and Pro Micro.
+USBHID code has been tested on Arduino Due, Leonardo, and Pro Micro.
 
 Arduino Due is recommended because it is 3.3v logic (or Pro Micro in 3.3v mode).
 According to the PN5180 datasheet, a 5v<->3.3v level shifter is required
 for use an Arduino Leonardo. However, I tested without it and everything
 was working properly, and my PN5180 is not fried. I still recommend a Due
 or a 3.3V pro micro just in case.
+
+SPICEAPI code has been tested on Arduino UNO (but should support any SPI-capable arduino without native USB HID capabilities) 
 
 # Pinout
 
@@ -55,16 +60,21 @@ if you need to.
 Connect the row pins to gpio 1 6 5 3.
 Connect the column pins to gpio 2 0 4.
 
-If you want to use the keypad, you have to set `#define WITH_KEYPAD 1` in PN5180-cardio.ino at line 47, and install Keypad library by Stanley and Brevig (can be installed directly from Arduino IDE library manager).
+If you want to use the keypad, you have to set `#define WITH_KEYPAD 1` in PN5180-cardio.ino in the top header options.
+
+If you're using the USBHID mode, then you should also install Keypad library by Stanley and Brevig (can be installed directly from Arduino IDE library manager).
+
+In SPICEAPI mode, it will work through Spiceapi instead.
 
 # How to use
 
 - Download zip
-- (optional) set `#define WITH_KEYPAD 1` (PN5180-cardio.ino line 47) and install Keypad library by Stanley and Brevig directly from Arduino IDE
+- (optional) set `#define WITH_SPICEAPI 1` (at top of PN5180-cardio.ino) if your arduino doesn't support USB HID
+- (optional) set `#define WITH_KEYPAD 1` (at top of PN5180-cardio.ino) and install Keypad library by Stanley and Brevig directly from Arduino IDE if applicable
 - flash the firmware
 - unplug the arduino
 - connect the PN5180 and keypad to the Arduino.
 
 Congratulations, your device should work just like a real cardio, use 
-your favorite tools instructions to play (e.g. "spicetools -cardio" ),
-and the keypad should be recognized as an additional USB peripheral.
+your favorite tools instructions to play (e.g. `spicetools -cardio` for the USBHID version, 
+or `spicetools -apiserial COMx` (with `x` your arduino COM port number).

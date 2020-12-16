@@ -60,16 +60,16 @@ enum PN5180TransceiveStat {
 };
 
 // PN5180 IRQ_STATUS
-#define RX_IRQ_STAT         	(1<<0)  // End of RF rececption IRQ
-#define TX_IRQ_STAT         	(1<<1)  // End of RF transmission IRQ
-#define IDLE_IRQ_STAT       	(1<<2)  // IDLE IRQ
-#define RFOFF_DET_IRQ_STAT  	(1<<6)  // RF Field OFF detection IRQ
-#define RFON_DET_IRQ_STAT   	(1<<7)  // RF Field ON detection IRQ
-#define TX_RFOFF_IRQ_STAT   	(1<<8)  // RF Field OFF in PCD IRQ
-#define TX_RFON_IRQ_STAT    	(1<<9)  // RF Field ON in PCD IRQ
-#define RX_SOF_DET_IRQ_STAT 	(1<<14) // RF SOF Detection IRQ
-#define GENERAL_ERROR_IRQ_STAT 	(1<<17) // General error IRQ
-#define LPCD_IRQ_STAT 			(1<<19) // LPCD Detection IRQ
+#define RX_IRQ_STAT         	((uint32_t)1<<0)  // End of RF rececption IRQ
+#define TX_IRQ_STAT         	((uint32_t)1<<1)  // End of RF transmission IRQ
+#define IDLE_IRQ_STAT       	((uint32_t)1<<2)  // IDLE IRQ
+#define RFOFF_DET_IRQ_STAT  	((uint32_t)1<<6)  // RF Field OFF detection IRQ
+#define RFON_DET_IRQ_STAT   	((uint32_t)1<<7)  // RF Field ON detection IRQ
+#define TX_RFOFF_IRQ_STAT   	((uint32_t)1<<8)  // RF Field OFF in PCD IRQ
+#define TX_RFON_IRQ_STAT    	((uint32_t)1<<9)  // RF Field ON in PCD IRQ
+#define RX_SOF_DET_IRQ_STAT 	((uint32_t)1<<14) // RF SOF Detection IRQ
+#define GENERAL_ERROR_IRQ_STAT 	((uint32_t)1<<17) // General error IRQ
+#define LPCD_IRQ_STAT 			((uint32_t)1<<19) // LPCD Detection IRQ
 
 class PN5180 {
 private:
@@ -103,7 +103,7 @@ public:
   /* cmd 0x06 */
   bool writeEEprom(uint8_t addr, uint8_t *buffer, uint8_t len);
   /* cmd 0x07 */
-  bool readEEprom(uint8_t addr, uint8_t *buffer, int len);
+  bool readEEprom(uint8_t addr, uint8_t *buffer, uint8_t len);
 
   /* cmd 0x09 */
   bool sendData(uint8_t *data, int len, uint8_t validBits = 0);

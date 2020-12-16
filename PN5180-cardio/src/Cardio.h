@@ -20,7 +20,6 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
 #ifndef CARDIO_h
 #define CARDIO_h
 
@@ -30,17 +29,7 @@
 #error The Cardio library requires Arduino IDE 1.6.6 or greater. Please update your IDE.
 #endif // ARDUINO < 10606
 
-#if ARDUINO > 10606
-#if !defined(USBCON)
-#error The Cardio library can only be used with a USB MCU (e.g. Arduino Leonardo, Arduino Micro, etc.).
-#endif // !defined(USBCON)
-#endif // ARDUINO > 10606
-
-#if !defined(_USING_DYNAMIC_HID)
-
-#warning "Using legacy HID core (non pluggable)"
-
-#else // !defined(_USING_DYNAMIC_HID)
+#if defined(USBCON)
 
 //================================================================================
 //  Cardio
