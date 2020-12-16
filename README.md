@@ -16,6 +16,8 @@ The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
 
 Spiceapi version provided by goat (thanks! :))
 
+The spiceapi code uses the ArduinoJson library by Benoît Blanchon.
+
 # Supported devices
 
 USBHID code has been tested on Arduino Due, Leonardo, and Pro Micro.
@@ -26,7 +28,9 @@ for use an Arduino Leonardo. However, I tested without it and everything
 was working properly, and my PN5180 is not fried. I still recommend a Due
 or a 3.3V pro micro just in case.
 
-SPICEAPI code has been tested on Arduino UNO (but should support any SPI-capable arduino without native USB HID capabilities) 
+SPICEAPI code has been tested on Arduino UNO.
+It should support any SPI-capable arduino without native USB HID capabilities but might require fine-tuning
+`SPICEAPI_WRAPPER_BUFFER_SIZE` and `SPICEAPI_WRAPPER_BUFFER_SIZE_STR` parameters in `PN5180-cardio.ino`.
 
 # Pinout
 
@@ -68,13 +72,27 @@ In SPICEAPI mode, it will work through Spiceapi instead.
 
 # How to use
 
+## USBHID
+
 - Download zip
-- (optional) set `#define WITH_SPICEAPI 1` (at top of PN5180-cardio.ino) if your arduino doesn't support USB HID
-- (optional) set `#define WITH_KEYPAD 1` (at top of PN5180-cardio.ino) and install Keypad library by Stanley and Brevig directly from Arduino IDE if applicable
+- (optional) set `#define WITH_KEYPAD 1` (in PN5180-cardio.ino user configurable options) and install Keypad library by Stanley and Brevig directly from Arduino IDE
 - flash the firmware
 - unplug the arduino
 - connect the PN5180 and keypad to the Arduino.
 
 Congratulations, your device should work just like a real cardio, use 
-your favorite tools instructions to play (e.g. `spicetools -cardio` for the USBHID version, 
-or `spicetools -apiserial COMx` (with `x` your arduino COM port number).
+your favorite tools instructions to play (e.g. `spicetools -cardio`).
+
+The keypad should be recognized as an additional USB device.
+
+## SPICEAPI
+
+- Download zip
+- set `#define WITH_SPICEAPI 1` (in PN5180-cardio.ino user configurable options) and install ArduinoJson library by Blanchon directly from Arduino IDE
+- set `SPICEAPI_PASS` accordingly (in PN5180-cardio.ino user configurable options)
+- (optional) set `#define WITH_KEYPAD 1` (in PN5180-cardio.ino user configurable options) and install Keypad library by Stanley and Brevig directly from Arduino IDE
+- flash the firmware
+- unplug the arduino
+- connect the PN5180 and keypad to the Arduino.
+
+Congratulations, your device should work, run `spicetools -apiserial COMx` (with `x` your arduino COM port number).
