@@ -160,11 +160,6 @@ void loop() {
 #endif
   nfc14443.setupRF();
   uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
-    if (uidLengthMF > 0) {
-      for (int i=0; i<7; i++) {
-        uid[i] = uid[3+i];
-      }
-      uid[8] = 0;
       
 #if USBHID == 1     
       Cardio.setUID(2, uid);
