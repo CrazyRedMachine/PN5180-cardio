@@ -163,13 +163,7 @@ void loop() {
 
   if (uidLengthMF > 0) 
   {
-    if (uidLengthMF == 4) 
-    {
-      for (int i=4; i<8; i++)
-      {
-        uid[i] = uid[i-4];
-      }
-    }
+      uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F
 #if USBHID == 1     
       Cardio.setUID(2, uid);
       Cardio.sendState();
