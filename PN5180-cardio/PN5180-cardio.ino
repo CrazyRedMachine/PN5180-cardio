@@ -161,7 +161,15 @@ void loop() {
   nfc14443.setupRF();
   uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
 
-  if (uidLengthMF > 0) {
+  if (uidLengthMF > 0) 
+  {
+    if (uidLengthMF == 4) 
+    {
+      for (int i=4; i<8; i++)
+      {
+        uid[i] = uid[i-4];
+      }
+    }
 #if USBHID == 1     
       Cardio.setUID(2, uid);
       Cardio.sendState();
