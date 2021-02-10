@@ -1,6 +1,6 @@
 # PN5180-cardio
 
-PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof, Spiceapi integration 
+PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof (for Aime, Nesica, BANAPASSPORT compatibility), Spiceapi integration 
 
 # Acknowledgments
 
