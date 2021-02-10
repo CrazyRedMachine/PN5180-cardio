@@ -15,8 +15,8 @@
 /* For games with multiple readers */
 #define SPICEAPI_PLAYERNUM 0
 
-//sneaky ISO14443 support (reader will pretend it was a FeliCa)
-#define WITH_ISO14443 0
+/* ISO14443 support (for older Aime/Nesica/BANAPASSPORT cards... reader will pretend it was a FeliCa for maximum cardio compatibility) */
+#define WITH_ISO14443 1
 
 /* === END OF USER CONFIGURABLE OPTIONS === */
 
