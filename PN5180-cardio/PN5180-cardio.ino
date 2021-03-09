@@ -4,7 +4,7 @@
 #define WITH_USBHID 1
 
 /* Keypad on boards without USB MCU requires WITH_SPICEAPI */
-#define WITH_KEYPAD 0
+#define WITH_KEYPAD 1
 
 /* Launch game with "-api 1337 -apipass changeme -apiserial COM1 -apiserialbaud 57600" or similar */
 #define WITH_SPICEAPI 0
@@ -52,7 +52,7 @@
   #else
     #define USBKEYPAD 1
     #define SPICEKEYPAD 0
-    #include <Keyboard.h>
+    #include "src/Keyboard.h"
   #endif
   #include <Keypad.h>
 #endif
@@ -82,6 +82,10 @@ PN5180ISO15693 nfc15693(PN5180_NSS, PN5180_BUSY, PN5180_RST);
 
 #if USBHID == 1
   Cardio_ Cardio;
+#endif
+
+#if USBKEYPAD == 1
+  Keyboard_ Keyboard;
 #endif
 
 #if WITH_KEYPAD == 1
