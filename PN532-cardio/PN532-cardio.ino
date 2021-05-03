@@ -15,18 +15,15 @@
 /* For games with multiple readers */
 #define SPICEAPI_PLAYERNUM 0
 
-/* ISO14443 support (for older Aime/Nesica/BANAPASSPORT cards... reader will pretend it was a FeliCa for maximum cardio compatibility) */
-#define WITH_ISO14443 1
-
 /* === END OF USER CONFIGURABLE OPTIONS === */
 
 /* DO NOT MESS WITH THE LINES BELOW UNLESS YOU KNOW WHAT YOU'RE DOING */
-#include "src/PN5180/PN5180.h"
-#include "src/PN5180/PN5180FeliCa.h"
-#include "src/PN5180/PN5180ISO15693.h"
-#if WITH_ISO14443 == 1
-  #include "src/PN5180/PN5180ISO14443.h"
-#endif
+#include <Wire.h>
+#include "src/PN532/PN532_I2C.h"
+#include "src/PN532/PN532.h"
+
+PN532_I2C pn532i2c(Wire);
+PN532 nfc(pn532i2c);
 
 #if WITH_USBHID == 1
   #if !defined(USBCON)
@@ -70,16 +67,6 @@
   spiceapi::Connection spiceCon(256, SPICEAPI_PASS);
 #endif
 
-#define PN5180_NSS  10
-#define PN5180_BUSY 9
-#define PN5180_RST  7
-
-PN5180FeliCa nfcFeliCa(PN5180_NSS, PN5180_BUSY, PN5180_RST);
-PN5180ISO15693 nfc15693(PN5180_NSS, PN5180_BUSY, PN5180_RST);
-#if WITH_ISO14443 == 1
-  PN5180ISO14443 nfc14443(PN5180_NSS, PN5180_BUSY, PN5180_RST);
-#endif
-
 #if USBHID == 1
   Cardio_ Cardio;
 #endif
@@ -110,20 +97,28 @@ void setup() {
 #endif
 
 /* NFC */
-  nfcFeliCa.begin();
-  nfcFeliCa.reset();
+  nfc.begin();
 
-  uint8_t productVersion[2];
-  nfcFeliCa.readEEprom(PRODUCT_VERSION, productVersion, sizeof(productVersion));
-  if (0xff == productVersion[1]) { // if product version 255, the initialization failed
-    exit(-1); // halt
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (!versiondata)
+  {
+Serial.begin(115200);
+Serial.print("Didn't find PN53x board");
+    while (1) {delay(10);};      // halt
   }
-  
-  uint8_t firmwareVersion[2];
-  nfcFeliCa.readEEprom(FIRMWARE_VERSION, firmwareVersion, sizeof(firmwareVersion));
-  uint8_t eepromVersion[2];
-  nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
-  nfcFeliCa.setupRF();
+
+  // Got ok data, print it out!
+/*  Serial.print("Found chip PN5"); Serial.println((versiondata >> 24) & 0xFF, HEX);
+  Serial.print("Firmware ver. "); Serial.print((versiondata >> 16) & 0xFF, DEC);
+  Serial.print('.'); Serial.println((versiondata >> 8) & 0xFF, DEC);
+*/
+  // Set the max number of retry attempts to read from a card
+  // This prevents us from waiting forever for a card, which is
+  // the default behaviour of the PN532.
+  nfc.setPassiveActivationRetries(0xFF);
+  nfc.SAMConfig();
+
+//  memset(_prevIDm, 0, 8);
 
 #if USBHID == 1
   Cardio.begin(false);
@@ -136,7 +131,7 @@ void setup() {
 }
 
 unsigned long lastReport = 0;
-int cardBusy = 0;
+uint16_t cardBusy = 0;
 
 // read cards loop
 void loop() {
@@ -151,51 +146,31 @@ void loop() {
   cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
-  
-#if WITH_ISO14443 == 1
-// check for ISO14443 card
-  nfc14443.reset();
-#if WITH_KEYPAD == 1
-  keypadCheck();
-#endif
-  nfc14443.setupRF();
-  uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
-
-  if (uidLengthMF > 0) 
-  {
-      uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F
-#if USBHID == 1     
-      Cardio.setUID(2, uid);
-      Cardio.sendState();
-#endif
-
-#if WITH_SPICEAPI == 1
-      formatUid(uid, uidBuf);
-      spiceapi::card_insert(spiceCon, SPICEAPI_PLAYERNUM, uidBuf);
-#endif
-
-      lastReport = millis();
-      cardBusy = 3000;
-      uidLengthMF = 0;
-      return;
-    }
-#endif
+  uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 
   // check for FeliCa card
-  nfcFeliCa.reset();
+  uint8_t ret;
+  uint16_t systemCode = 0xFFFF;
+  uint8_t requestCode = 0x01;       // System Code request
+  uint8_t idm[8];
+  uint8_t pmm[8];
+  uint16_t systemCodeResponse;
+
+  // Wait for an FeliCa type cards.
+  // When one is found, some basic information such as IDm, PMm, and System Code are retrieved.
+  ret = nfc.felica_Polling(systemCode, requestCode, idm, pmm, &systemCodeResponse, 5000);
+
 #if WITH_KEYPAD == 1
   keypadCheck();
 #endif
-  nfcFeliCa.setupRF();
-  uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
-    if (uidLength > 0) {
+    if (ret == 1) {
 #if USBHID == 1
-      Cardio.setUID(2, uid);
+      Cardio.setUID(2, idm);
       Cardio.sendState();
 #endif
 
 #if WITH_SPICEAPI == 1
-      formatUid(uid, uidBuf);
+      formatUid(idm, uidBuf);
       spiceapi::card_insert(spiceCon, SPICEAPI_PLAYERNUM, uidBuf);
 #endif
       
@@ -205,17 +180,14 @@ void loop() {
       return;
     }
 
-   // check for ISO-15693 card
-  nfc15693.reset();
+   // check for ISO14443 card
+
 #if WITH_KEYPAD == 1
   keypadCheck();
 #endif
-  nfc15693.setupRF();
-  // try to read ISO15693 inventory
-  ISO15693ErrorCode rc = nfc15693.getInventory(uid);
-  if (rc == ISO15693_EC_OK ) {
+    if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength)) {
     for (int i=0; i<8; i++) {
-      hid_data[i] = uid[7-i];
+      hid_data[i] = uid[i%uidLength];
     }
     
 #if USBHID == 1
