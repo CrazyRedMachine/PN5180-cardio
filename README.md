@@ -1,3 +1,5 @@
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate?hosted_button_id=WT735CX4UMZ9U)
+
 # PN5180-cardio
 
 PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof (for Aime, Nesica, BANAPASSPORT compatibility), Spiceapi integration 
@@ -94,3 +96,13 @@ The keypad should be recognized as an additional USB device.
 - connect the PN5180 and keypad to the Arduino.
 
 Congratulations, your device should work, run `spicetools -apiserial COMx` (with `x` your arduino COM port number).
+
+## Donation
+
+If this project helps you and you want to give back, you can help me with my future projects.
+
+While not necessary, donations are much appreciated and will only go towards funding future github projects (arcade hardware ain't cheap :( ).
+
+Of course you'll also receive my gratitude and I'll remember you if you post a feature request ;)
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?hosted_button_id=WT735CX4UMZ9U)
