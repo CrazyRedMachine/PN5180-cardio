@@ -26,6 +26,9 @@ It should support any SPI-capable arduino without native USB HID capabilities bu
 
 # Pinout
 
+**Note:** The PN532 has to be put in I2C mode (usually there are two dipswitches, the first one has to be set to ON and the second to OFF).
+
+
 # Keypad Pinout
 
 Connect the row pins to gpio 1 6 5 3.
