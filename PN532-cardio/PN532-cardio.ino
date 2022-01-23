@@ -158,7 +158,7 @@ void loop() {
 
   // Wait for an FeliCa type cards.
   // When one is found, some basic information such as IDm, PMm, and System Code are retrieved.
-  ret = nfc.felica_Polling(systemCode, requestCode, idm, pmm, &systemCodeResponse, 5000);
+  ret = nfc.felica_Polling(systemCode, requestCode, idm, pmm, &systemCodeResponse, 500);
 
 #if WITH_KEYPAD == 1
   keypadCheck();
