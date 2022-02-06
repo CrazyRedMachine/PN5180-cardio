@@ -1,6 +1,9 @@
 #ifndef CONFIG_h
 #define CONFIG_h
 
+/* PN5180 support (disable to test only the navigation buttons/keypad) */
+#define WITH_PN5180 1
+
 /* ISO14443 support (for older Aime/Nesica/BANAPASSPORT cards... reader will pretend it was a FeliCa for maximum cardio compatibility) */
 #define WITH_ISO14443 1
 

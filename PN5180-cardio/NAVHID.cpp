@@ -1,6 +1,6 @@
 #include "NAVHID.h"
 
-#define BUTTON_PADDING (8 - (NUMBER_OF_BUTTONS % 8))+8
+#define BUTTON_PADDING (8 - (NUMBER_OF_BUTTONS % 8))
 #define LED_PADDING 5
 
 uint8_t usb_data[128];
@@ -18,11 +18,11 @@ static const uint8_t PROGMEM hid_report[] = {
     /* Buttons */
     0x05, 0x09,                      //   USAGE_PAGE (Button)
     0x19, 0x01,                      //   USAGE_MINIMUM (Button 1)
-    0x29, 0x05,         //   USAGE_MAXIMUM (Button NUMBER_OF_BUTTONS)
+    0x29, NUMBER_OF_BUTTONS,         //   USAGE_MAXIMUM (Button NUMBER_OF_BUTTONS)
     0x15, 0x00,                      //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                      //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                      //   REPORT_SIZE (1)
-    0x95, 0x05,         //   REPORT_COUNT (NUMBER_OF_BUTTONS)
+    0x95, NUMBER_OF_BUTTONS,         //   REPORT_COUNT (NUMBER_OF_BUTTONS)
     0x55, 0x00,                      //   UNIT_EXPONENT (0)
     0x65, 0x00,                      //   UNIT (None)
     0x81, 0x02,                      //   INPUT (Data,Var,Abs)
@@ -30,23 +30,10 @@ static const uint8_t PROGMEM hid_report[] = {
 
     /* Buttons padding */
     0x75, 0x01,                      //   REPORT_SIZE (1)
-    0x95, 0x03,            //   REPORT_COUNT (BUTTON_PADDING)
+    0x95, BUTTON_PADDING,            //   REPORT_COUNT (BUTTON_PADDING)
     0x81, 0x03,                      //   INPUT (Cnst,Var,Abs)
     /* Buttons padding END */
-
-    /* 2 knobs as analog axis */
-  0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
-  0x09, 0x01,        //   Usage (Pointer)
-  0x15, 0x00,        //   Logical Minimum (0)
-  0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-  0x95, 0x02,        //   Report Count (2)
-  0x75, 0x08,        //   Report Size (8)
-  0xA1, 0x00,        //   Collection (Physical)
-    0x09, 0x30,        //     Usage (X)
-    0x09, 0x31,        //     Usage (Y)
-    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-  0xC0,              //   End Collection (analog axis)
-
+    
        /*Lights */
     0x85, 0x04,                    /*   REPORT_ID 4*/ 
     0x15, 0x00,                    /*     LOGICAL_MINIMUM (0) */ 
@@ -212,12 +199,10 @@ void NAVHID_::write_lights(uint8_t button_state, bool hid, bool reactive) {
 }
 
 int NAVHID_::send_state(uint8_t button_state) {
-    uint8_t data[4];
+    uint8_t data[2];
 
     data[0] = (uint8_t) 3;
     data[1] = (uint8_t) (button_state & 0xFF);
-    data[2] = 0x7F;
-    data[3] = 0x7F;
 
-    return USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, 4);
+    return USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, 2);
 }

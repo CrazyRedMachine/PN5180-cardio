@@ -1,19 +1,22 @@
 #include "Config.h"
-#include "src/PN5180/PN5180.h"
-#include "src/PN5180/PN5180FeliCa.h"
-#include "src/PN5180/PN5180ISO15693.h"
-#if WITH_ISO14443 == 1
-  #include "src/PN5180/PN5180ISO14443.h"
-#endif
 #include "CARDIOHID.h"
 #include <Keyboard.h>
 #include <Keypad.h>
 
-PN5180FeliCa nfcFeliCa(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
-PN5180ISO15693 nfc15693(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
-#if WITH_ISO14443 == 1
-  PN5180ISO14443 nfc14443(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
+#if WITH_PN5180 == 1
+  #include "src/PN5180/PN5180.h"
+  #include "src/PN5180/PN5180FeliCa.h"
+  #include "src/PN5180/PN5180ISO15693.h"
+  #if WITH_ISO14443 == 1
+    #include "src/PN5180/PN5180ISO14443.h"
+  #endif
+  PN5180FeliCa nfcFeliCa(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
+  PN5180ISO15693 nfc15693(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
+  #if WITH_ISO14443 == 1
+    PN5180ISO14443 nfc14443(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
+  #endif
 #endif
+
 CARDIOHID_ Cardio;
 
 #if WITH_NAVIGATION == 1
@@ -79,6 +82,7 @@ void setup() {
     Keyboard.begin();
 #endif
 
+#if WITH_PN5180 == 1
 /* NFC */
   nfcFeliCa.begin();
   nfcFeliCa.reset();
@@ -94,10 +98,9 @@ void setup() {
   uint8_t eepromVersion[2];
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
   nfcFeliCa.setupRF();
-}
+#endif
 
-unsigned long lastReport = 0;
-int cardBusy = 0;
+}
 
 // read cards loop
 void loop() {
@@ -145,7 +148,10 @@ void loop() {
         last_report = micros();
     }
 #endif
-  
+
+#if WITH_PN5180 == 1
+static unsigned long lastReport = 0;
+static int cardBusy = 0;
   /* NFC */
   if (millis()-lastReport < cardBusy) return;
   
@@ -208,6 +214,7 @@ void loop() {
   // no card detected
   lastReport = millis();
   cardBusy = 200;
+#endif /* PN5180 */
 }
 
 #if WITH_KEYPAD == 1
