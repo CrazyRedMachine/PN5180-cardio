@@ -2,7 +2,11 @@
 
 # PN5180-cardio
 
-PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof (for Aime, Nesica, BANAPASSPORT compatibility), Spiceapi integration 
+PN5180 eAmusement wavepass USB HID card reader (cardio) with optional integrated keypad, ISO14443 to FeliCa spoof (for Aime, Nesica, BANAPASSPORT compatibility)
+
+## Alternate branches
+
+Be sure to check out alternate branches for variants using other backends or hardware.
 
 # Acknowledgments
 
@@ -12,15 +16,13 @@ ISO15693 code is based on [ATrappmann/PN5180-Library](https://github.com/ATrappm
 
 ISO14443 implementation taken from [tueddy/PN5180-Library/ISO14443](https://github.com/tueddy/PN5180-Library/tree/ISO14443).
 
-HID layer code is inspired from Matthew Heironimus' <Joystick.h> library.
-
 The keypad code uses the Keypad library by Mark Stanley and Alexander Brevig.
 
-Spiceapi version provided by [goat](https://github.com/goaaats) (thanks! :))
+Spiceapi version provided by [goat](https://github.com/goaaats) (thanks! :)), refer to SpiceAPI branch for more information.
 
 # Supported devices
 
-USBHID code has been tested on Arduino Due, Leonardo, and Pro Micro.
+Code has been tested on Arduino Due, Leonardo, and Pro Micro.
 
 Arduino Due is recommended because it is 3.3v logic (or Pro Micro in 3.3v mode).
 According to the PN5180 datasheet, a 5v<->3.3v level shifter is required
@@ -28,18 +30,15 @@ for use an Arduino Leonardo. However, I tested without it and everything
 was working properly, and my PN5180 is not fried. I still recommend a Due
 or a 3.3V pro micro just in case.
 
-SPICEAPI code has been tested on Arduino UNO.
-It should support any SPI-capable arduino without native USB HID capabilities but might require fine-tuning
-`SPICEAPI_WRAPPER_BUFFER_SIZE` and `SPICEAPI_WRAPPER_BUFFER_SIZE_STR` parameters in `PN5180-cardio.ino`.
-
 # Pinout
+
+Note that the 3.3v pin from PN5180 is not connected to the arduino.
 
 Because PN5180 is an SPI device, some pins are constrained,
 
 Arduino | Level Converter | PN5180 pin mapping:
 --- | --- | ---
 5V      |      <-->       |      5V
-3.3V    |       <-->      |       3.3V
 GND    |        <-->      |       GND
 5V      | HV | .
 GND     | GND (HV) | .
@@ -64,15 +63,11 @@ if you need to.
 Connect the row pins to gpio 1 6 5 3.
 Connect the column pins to gpio 2 0 4.
 
-If you want to use the keypad, you have to set `#define WITH_KEYPAD 1` in PN5180-cardio.ino in the top header options.
+If you want to use the keypad, you have to set `#define WITH_KEYPAD 1` in Config.h
 
-If you're using the USBHID mode, then you should also install Keypad library by Stanley and Brevig (can be installed directly from Arduino IDE library manager).
-
-In SPICEAPI mode, it will work through Spiceapi instead.
+You should also install Keypad library by Stanley and Brevig (can be installed directly from Arduino IDE library manager).
 
 # How to use
-
-## USBHID
 
 - Download zip
 - (optional) set `#define WITH_KEYPAD 1` (in PN5180-cardio.ino user configurable options) and install Keypad library by Stanley and Brevig directly from Arduino IDE
@@ -85,17 +80,9 @@ your favorite tools instructions to play (e.g. `spicetools -cardio`).
 
 The keypad should be recognized as an additional USB device.
 
-## SPICEAPI
+# SPICEAPI
 
-- Download zip
-- set `#define WITH_SPICEAPI 1` (in PN5180-cardio.ino user configurable options)
-- set `SPICEAPI_PASS` accordingly (in PN5180-cardio.ino user configurable options)
-- (optional) set `#define WITH_KEYPAD 1` (in PN5180-cardio.ino user configurable options) and install Keypad library by Stanley and Brevig directly from Arduino IDE
-- flash the firmware
-- unplug the arduino
-- connect the PN5180 and keypad to the Arduino.
-
-Congratulations, your device should work, run `spicetools -apiserial COMx` (with `x` your arduino COM port number).
+If you insist on using an arduino without HID support (ie. atmega328p based boards like Uno, Nano, Mega...), then you can still use this code through spiceapi. Refer to SpiceAPI branch for more information.
 
 ## Donation
 
