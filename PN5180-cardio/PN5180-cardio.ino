@@ -16,6 +16,29 @@ PN5180ISO15693 nfc15693(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
 #endif
 CARDIOHID_ Cardio;
 
+#if WITH_NAVIGATION == 1
+#include "NAVHID.h"
+NAVHID_ NAVHID;
+
+// Pins where the LEDs are connected to
+uint8_t led_pins[] = {
+    PIN_LED_UP,
+    PIN_LED_DOWN,
+    PIN_LED_LEFT,
+    PIN_LED_RIGHT,
+    PIN_LED_START,
+};
+
+// Pins where the buttons are connected to
+uint8_t button_pins[] = {
+    PIN_BUT_UP,
+    PIN_BUT_DOWN,
+    PIN_BUT_LEFT,
+    PIN_BUT_RIGHT,
+    PIN_BUT_START,
+};
+#endif
+
 #if WITH_KEYPAD == 1
   /* Keypad declarations */
   const byte ROWS = 4;
@@ -34,6 +57,21 @@ CARDIOHID_ Cardio;
 #endif
  
 void setup() {
+
+#if WITH_NAVIGATION == 1
+    for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
+        pinMode(button_pins[i], INPUT_PULLUP);
+    }
+
+    for (int i = 0; i < NUMBER_OF_LEDS; i++) {
+        pinMode(led_pins[i], OUTPUT);
+        digitalWrite(led_pins[i], HIGH);
+    }
+    delay(200);
+    for (int i = 0; i < NUMBER_OF_LEDS; i++) {
+        digitalWrite(led_pins[i], LOW);
+    }
+#endif
 
 #if WITH_KEYPAD == 1
 /* Keypad */
@@ -63,9 +101,49 @@ int cardBusy = 0;
 
 // read cards loop
 void loop() {
+  
 #if WITH_KEYPAD == 1
   /* KEYPAD */
   keypadCheck();
+#endif
+
+#if WITH_NAVIGATION == 1
+    static uint32_t last_report = 0;
+    static bool reactive = false;
+    static bool hid_lights = false;
+    uint8_t buttons_state = 0;
+    
+    /* autoswitch between HID and reactive modes */
+    if ((millis()-NAVHID.getLastHidUpdate()) > 3000)
+    {
+      reactive = true;
+      hid_lights = false;
+    }
+    else
+    {
+      reactive = false;
+      hid_lights = true;
+    }
+      
+    /* read buttons */
+    for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
+        int button_value = digitalRead(button_pins[i]);
+        // Put button states into the buttons_state variable via bitwise operations
+        if (button_value == LOW) {
+            buttons_state |= 1 << i;
+        } else {
+            buttons_state &= ~(1 << i);
+        }
+    }
+
+    /* write lights */
+    NAVHID.write_lights(buttons_state, hid_lights, reactive);
+
+    /* Send button state every 1000 µs */
+    if (((micros() - last_report) >= REPORT_DELAY)) {
+        NAVHID.send_state(buttons_state);
+        last_report = micros();
+    }
 #endif
   
   /* NFC */

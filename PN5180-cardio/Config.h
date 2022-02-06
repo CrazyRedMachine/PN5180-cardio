@@ -24,4 +24,17 @@
 /* Enable custom VID/PID (will require to hold reset button to reflash firmware) */
 #define CUSTOM_VIDPID 1
 
-#endif
+/* NAVIGATION */
+#define WITH_NAVIGATION 1
+  #define PIN_BUT_UP    A0
+  #define PIN_BUT_DOWN  A1
+  #define PIN_BUT_LEFT  A2
+  #define PIN_BUT_RIGHT A3
+  #define PIN_BUT_START A4  
+  #define PIN_LED_UP    8
+  #define PIN_LED_DOWN  11
+  #define PIN_LED_LEFT  12
+  #define PIN_LED_RIGHT 13
+  #define PIN_LED_START A5
+
+#endif /* CONFIG_H */
