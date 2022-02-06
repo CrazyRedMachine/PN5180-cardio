@@ -28,6 +28,16 @@
 #define USB_Send USBD_Send
 #endif
 
+const DeviceDescriptor PROGMEM USB_DeviceDescriptorIAD =
+  D_DEVICE(0xEF,0x02,0x01,64,0x1ccf,0x5252,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+const char* const PROGMEM String_Manufacturer = "CrazyRedMachine";
+const char* const PROGMEM String_Product = "CardIO";
+#if CARDIO_ID == 1
+const char* const PROGMEM String_Serial = "CARDIOP1";
+#else
+const char* const PROGMEM String_Serial = "CARDIOP2";	
+#endif
+
 DynamicHID_& DynamicHID()
 {
 	static DynamicHID_ obj;
@@ -45,8 +55,43 @@ int DynamicHID_::getInterface(uint8_t* interfaceCount)
 	return USB_SendControl(0, &hidInterface, sizeof(hidInterface));
 }
 
+static bool SendControl(uint8_t d)
+{
+  return USB_SendControl(0, &d, 1) == 1;
+}
+
+static bool USB_SendStringDescriptor(const char *string_P, uint8_t string_len, uint8_t flags) {
+        SendControl(2 + string_len * 2);
+        SendControl(3);
+        bool pgm = flags & TRANSFER_PGM;
+        for(uint8_t i = 0; i < string_len; i++) {
+                bool r = SendControl(pgm ? pgm_read_byte(&string_P[i]) : string_P[i]);
+                r &= SendControl(0); // high byte
+                if(!r) {
+                        return false;
+                }
+        }
+        return true;
+}
+
 int DynamicHID_::getDescriptor(USBSetup& setup)
 {
+#if CUSTOM_VIDPID == 1
+	if(setup.wValueH == USB_DEVICE_DESCRIPTOR_TYPE) {
+        return USB_SendControl(TRANSFER_PGM, (const uint8_t*)&USB_DeviceDescriptorIAD, sizeof(USB_DeviceDescriptorIAD));
+    }
+#endif
+    if (setup.wValueH == USB_STRING_DESCRIPTOR_TYPE) {
+        if (setup.wValueL == IPRODUCT) {
+            return USB_SendStringDescriptor(String_Product, strlen(String_Product), 0);
+        }
+        else if (setup.wValueL == IMANUFACTURER) {
+            return USB_SendStringDescriptor(String_Manufacturer, strlen(String_Manufacturer), 0);
+        }
+        else if (setup.wValueL == ISERIAL) {
+            return USB_SendStringDescriptor(String_Serial, strlen(String_Serial), 0);
+        }
+	}
 	// Check if this is a HID Class Descriptor request
 	if (setup.bmRequestType != REQUEST_DEVICETOHOST_STANDARD_INTERFACE) { return 0; }
 	if (setup.wValueH != DYNAMIC_HID_REPORT_DESCRIPTOR_TYPE) { return 0; }
@@ -68,16 +113,6 @@ int DynamicHID_::getDescriptor(USBSetup& setup)
 	protocol = DYNAMIC_HID_REPORT_PROTOCOL;
 	
 	return total;
-}
-
-uint8_t DynamicHID_::getShortName(char *name)
-{
-	name[0] = 'H';
-	name[1] = 'I';
-	name[2] = 'D';
-	name[3] = 'A' + (descriptorSize & 0x0F);
-	name[4] = 'A' + ((descriptorSize >> 4) & 0x0F);
-	return 5;
 }
 
 void DynamicHID_::AppendDescriptor(DynamicHIDSubDescriptor *node)

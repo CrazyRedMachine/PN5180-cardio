@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <Arduino.h>
+#include "../../Config.h"
 
 #ifdef _VARIANT_ARDUINO_DUE_X_
   // The following values are the same as AVR's USBAPI.h
@@ -116,7 +117,6 @@ protected:
   int getInterface(uint8_t* interfaceCount);
   int getDescriptor(USBSetup& setup);
   bool setup(USBSetup& setup);
-  uint8_t getShortName(char* name);
 
 private:
   #ifdef _VARIANT_ARDUINO_DUE_X_
