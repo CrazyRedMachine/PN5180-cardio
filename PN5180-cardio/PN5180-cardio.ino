@@ -5,7 +5,7 @@
 #if WITH_ISO14443 == 1
   #include "src/PN5180/PN5180ISO14443.h"
 #endif
-#include "src/Cardio.h"
+#include "CARDIOHID.h"
 #include <Keyboard.h>
 #include <Keypad.h>
 
@@ -14,7 +14,7 @@ PN5180ISO15693 nfc15693(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
 #if WITH_ISO14443 == 1
   PN5180ISO14443 nfc14443(PN5180_PIN_NSS, PN5180_PIN_BUSY, PN5180_PIN_RST);
 #endif
-Cardio_ Cardio;
+CARDIOHID_ Cardio;
 
 #if WITH_KEYPAD == 1
   /* Keypad declarations */
@@ -56,8 +56,6 @@ void setup() {
   uint8_t eepromVersion[2];
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
   nfcFeliCa.setupRF();
-
-  Cardio.begin(false);
 }
 
 unsigned long lastReport = 0;
@@ -89,8 +87,7 @@ void loop() {
   if (uidLengthMF > 0) 
   {
       uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F  
-      Cardio.setUID(2, uid);
-      Cardio.sendState();
+      Cardio.sendState(2, uid);
       lastReport = millis();
       cardBusy = 3000;
       uidLengthMF = 0;
@@ -106,8 +103,7 @@ void loop() {
   nfcFeliCa.setupRF();
   uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
     if (uidLength > 0) {
-      Cardio.setUID(2, uid);
-      Cardio.sendState();      
+      Cardio.sendState(2, uid);      
       lastReport = millis();
       cardBusy = 3000;
       uidLength = 0;
@@ -126,8 +122,7 @@ void loop() {
     for (int i=0; i<8; i++) {
       hid_data[i] = uid[7-i];
     }
-    Cardio.setUID(1, hid_data);
-    Cardio.sendState();
+    Cardio.sendState(1, hid_data);
     lastReport = millis();
     cardBusy = 3000;
     return;
