@@ -111,6 +111,88 @@ void loop() {
 #endif
 
 #if WITH_NAVIGATION == 1
+  inputCheck();
+#endif
+
+#if WITH_PN5180 == 1
+static unsigned long lastReport = 0;
+static int cardBusy = 0;
+  /* NFC */
+  if (millis()-lastReport < cardBusy) return;
+  
+  cardBusy = 0;
+  uint8_t uid[8] = {0,0,0,0,0,0,0,0};
+  uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
+  
+#if WITH_ISO14443 == 1
+// check for ISO14443 card
+  nfc14443.reset();
+#if WITH_KEYPAD == 1
+  keypadCheck();
+#endif
+#if WITH_NAVIGATION == 1
+  inputCheck();
+#endif
+  nfc14443.setupRF();
+  uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
+
+  if (uidLengthMF > 0) 
+  {
+      uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F  
+      Cardio.sendState(2, uid);
+      lastReport = millis();
+      cardBusy = 3000;
+      uidLengthMF = 0;
+      return;
+    }
+#endif /* ISO14443 */
+
+  // check for FeliCa card
+  nfcFeliCa.reset();
+#if WITH_KEYPAD == 1
+  keypadCheck();
+#endif
+#if WITH_NAVIGATION == 1
+  inputCheck();
+#endif
+  nfcFeliCa.setupRF();
+  uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
+    if (uidLength > 0) {
+      Cardio.sendState(2, uid);      
+      lastReport = millis();
+      cardBusy = 3000;
+      uidLength = 0;
+      return;
+    }
+
+   // check for ISO-15693 card
+  nfc15693.reset();
+#if WITH_KEYPAD == 1
+  keypadCheck();
+#endif
+#if WITH_NAVIGATION == 1
+  inputCheck();
+#endif
+  nfc15693.setupRF();
+  // try to read ISO15693 inventory
+  ISO15693ErrorCode rc = nfc15693.getInventory(uid);
+  if (rc == ISO15693_EC_OK ) {
+    for (int i=0; i<8; i++) {
+      hid_data[i] = uid[7-i];
+    }
+    Cardio.sendState(1, hid_data);
+    lastReport = millis();
+    cardBusy = 3000;
+    return;
+  }
+  // no card detected
+  lastReport = millis();
+  cardBusy = 200;
+#endif /* PN5180 */
+}
+
+#if WITH_NAVIGATION == 1
+void inputCheck(){
     static uint32_t last_report = 0;
     static bool reactive = false;
     static bool hid_lights = false;
@@ -147,75 +229,8 @@ void loop() {
         NAVHID.send_state(buttons_state);
         last_report = micros();
     }
-#endif
-
-#if WITH_PN5180 == 1
-static unsigned long lastReport = 0;
-static int cardBusy = 0;
-  /* NFC */
-  if (millis()-lastReport < cardBusy) return;
-  
-  cardBusy = 0;
-  uint8_t uid[8] = {0,0,0,0,0,0,0,0};
-  uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
-  
-#if WITH_ISO14443 == 1
-// check for ISO14443 card
-  nfc14443.reset();
-#if WITH_KEYPAD == 1
-  keypadCheck();
-#endif
-  nfc14443.setupRF();
-  uint8_t uidLengthMF = nfc14443.readCardSerial(uid);
-
-  if (uidLengthMF > 0) 
-  {
-      uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F  
-      Cardio.sendState(2, uid);
-      lastReport = millis();
-      cardBusy = 3000;
-      uidLengthMF = 0;
-      return;
-    }
-#endif /* ISO14443 */
-
-  // check for FeliCa card
-  nfcFeliCa.reset();
-#if WITH_KEYPAD == 1
-  keypadCheck();
-#endif
-  nfcFeliCa.setupRF();
-  uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
-    if (uidLength > 0) {
-      Cardio.sendState(2, uid);      
-      lastReport = millis();
-      cardBusy = 3000;
-      uidLength = 0;
-      return;
-    }
-
-   // check for ISO-15693 card
-  nfc15693.reset();
-#if WITH_KEYPAD == 1
-  keypadCheck();
-#endif
-  nfc15693.setupRF();
-  // try to read ISO15693 inventory
-  ISO15693ErrorCode rc = nfc15693.getInventory(uid);
-  if (rc == ISO15693_EC_OK ) {
-    for (int i=0; i<8; i++) {
-      hid_data[i] = uid[7-i];
-    }
-    Cardio.sendState(1, hid_data);
-    lastReport = millis();
-    cardBusy = 3000;
-    return;
-  }
-  // no card detected
-  lastReport = millis();
-  cardBusy = 200;
-#endif /* PN5180 */
 }
+#endif
 
 #if WITH_KEYPAD == 1
 void keypadCheck(){
