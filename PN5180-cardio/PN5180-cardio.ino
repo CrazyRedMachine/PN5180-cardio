@@ -58,7 +58,8 @@ uint8_t button_pins[] = {
   byte colPins[COLS] = {PIN_COL1, PIN_COL2, PIN_COL3};
   Keypad kpd = Keypad( makeKeymap(numpad), rowPins, colPins, ROWS, COLS );
 #endif
- 
+
+uint16_t sleepTimeMS = 0x3FF;
 void setup() {
 
 #if WITH_NAVIGATION == 1
@@ -97,14 +98,55 @@ void setup() {
   nfcFeliCa.readEEprom(FIRMWARE_VERSION, firmwareVersion, sizeof(firmwareVersion));
   uint8_t eepromVersion[2];
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
-  nfcFeliCa.setupRF();
+
+/* SETUP LPCD */
+  uint8_t data[255];  
+  uint8_t response[256];  
+  // LPCD_FIELD_ON_TIME (0x36)  
+  uint8_t fieldOn = 0xF0; 
+  data[0] = fieldOn;  
+  nfcFeliCa.writeEEprom(0x36, data, 1); 
+  nfcFeliCa.readEEprom(0x36, response, 1);  
+  fieldOn = response[0];  
+
+  // LPCD_THRESHOLD (0x37)  
+  uint8_t threshold = 0x04; 
+  data[0] = threshold;  
+  nfcFeliCa.writeEEprom(0x37, data, 1); 
+  nfcFeliCa.readEEprom(0x37, response, 1);  
+  threshold = response[0];  
+
+  // LPCD_REFVAL_GPO_CONTROL (0x38) 
+  uint8_t lpcdMode = 0x01; // 1 = LPCD SELF CALIBRATION 
+  data[0] = lpcdMode; 
+  nfcFeliCa.writeEEprom(0x38, data, 1); 
+  nfcFeliCa.readEEprom(0x38, response, 1);  
+  lpcdMode = response[0];   
+    
+  // LPCD_GPO_TOGGLE_BEFORE_FIELD_ON (0x39) 
+  uint8_t beforeFieldOn = 0xF0;   
+  data[0] = beforeFieldOn;  
+  nfcFeliCa.writeEEprom(0x39, data, 1); 
+  nfcFeliCa.readEEprom(0x39, response, 1);  
+  beforeFieldOn = response[0];  
+    
+  // LPCD_GPO_TOGGLE_AFTER_FIELD_ON (0x3A)  
+  uint8_t afterFieldOn = 0xF0;  
+  data[0] = afterFieldOn; 
+  nfcFeliCa.writeEEprom(0x3A, data, 1); 
+  nfcFeliCa.readEEprom(0x3A, response, 1);  
+  afterFieldOn = response[0]; 
+  delay(100); 
+        
+  // turn on LPCD in self calibration mode  
+  nfcFeliCa.switchToLPCD(sleepTimeMS);
 #endif
 
 }
 
 // read cards loop
 void loop() {
-  
+
 #if WITH_KEYPAD == 1
   /* KEYPAD */
   keypadCheck();
@@ -115,15 +157,49 @@ void loop() {
 #endif
 
 #if WITH_PN5180 == 1
+  if (digitalRead(PN5180_PIN_IRQ) == HIGH) {
+    scanCard();
+  }
+  nfcFeliCa.switchToLPCD(sleepTimeMS);
+#endif
+}
+
+#if WITH_PN5180 == 1
+  void scanCard(){
 static unsigned long lastReport = 0;
 static int cardBusy = 0;
+
   /* NFC */
   if (millis()-lastReport < cardBusy) return;
   
   cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
-  
+
+  // manage IRQ
+  nfcFeliCa.getIRQStatus();  
+  uint32_t u; 
+  nfcFeliCa.readRegister(0x26, &u); 
+  nfcFeliCa.clearIRQStatus(0xffffffff); 
+
+ // check for FeliCa card
+ nfcFeliCa.reset();  
+#if WITH_KEYPAD == 1
+  keypadCheck();
+#endif
+#if WITH_NAVIGATION == 1
+  inputCheck();
+#endif
+  nfcFeliCa.setupRF();
+  uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
+    if (uidLength > 0) {
+      Cardio.sendState(2, uid);      
+      lastReport = millis();
+      cardBusy = 3000;
+      uidLength = 0;
+      return;
+    }
+      
 #if WITH_ISO14443 == 1
 // check for ISO14443 card
   nfc14443.reset();
@@ -146,24 +222,6 @@ static int cardBusy = 0;
       return;
     }
 #endif /* ISO14443 */
-
-  // check for FeliCa card
-  nfcFeliCa.reset();
-#if WITH_KEYPAD == 1
-  keypadCheck();
-#endif
-#if WITH_NAVIGATION == 1
-  inputCheck();
-#endif
-  nfcFeliCa.setupRF();
-  uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
-    if (uidLength > 0) {
-      Cardio.sendState(2, uid);      
-      lastReport = millis();
-      cardBusy = 3000;
-      uidLength = 0;
-      return;
-    }
 
    // check for ISO-15693 card
   nfc15693.reset();
@@ -188,8 +246,8 @@ static int cardBusy = 0;
   // no card detected
   lastReport = millis();
   cardBusy = 200;
-#endif /* PN5180 */
 }
+#endif /* PN5180 */
 
 #if WITH_NAVIGATION == 1
 void inputCheck(){

@@ -11,6 +11,7 @@
 #define PN5180_PIN_NSS  10
 #define PN5180_PIN_BUSY 9
 #define PN5180_PIN_RST  7
+#define PN5180_PIN_IRQ  30 //additional gpio
 
 /* Use a matrix keypad */
 #define WITH_KEYPAD 1
