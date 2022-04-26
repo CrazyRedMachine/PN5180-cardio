@@ -61,6 +61,9 @@ uint8_t button_pins[] = {
 
 uint16_t sleepTimeMS = 0x3FF;
 void setup() {
+  //Serial.begin(115200);
+  delay(3000);
+   //Serial.println(F("PN5180 LPCD Demo Sketch"));
 
 #if WITH_NAVIGATION == 1
     for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
@@ -85,20 +88,35 @@ void setup() {
 
 #if WITH_PN5180 == 1
 /* NFC */
-  nfcFeliCa.begin();
+  pinMode(PN5180_PIN_IRQ, INPUT);
+  
+  nfcFeliCa.begin();    
   nfcFeliCa.reset();
-
+  
   uint8_t productVersion[2];
   nfcFeliCa.readEEprom(PRODUCT_VERSION, productVersion, sizeof(productVersion));
+  
   if (0xff == productVersion[1]) { // if product version 255, the initialization failed
+    
     exit(-1); // halt
   }
   
   uint8_t firmwareVersion[2];
   nfcFeliCa.readEEprom(FIRMWARE_VERSION, firmwareVersion, sizeof(firmwareVersion));
+
   uint8_t eepromVersion[2];
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
 
+  uint8_t irqPin[1];
+  nfcFeliCa.readEEprom(IRQ_PIN_CONFIG, irqPin, sizeof(irqPin));
+
+  //Serial.println(F("----------------------------------"));
+  //Serial.println(F("Reading IRQ_ENABLE register..."));
+  uint32_t irqEnable;
+  nfcFeliCa.readRegister(IRQ_ENABLE, &irqEnable);
+  //Serial.print(F("IRQ_ENABLE=0x"));
+  //Serial.println(irqEnable, HEX);
+  
 /* SETUP LPCD */
   uint8_t data[255];  
   uint8_t response[256];  
@@ -114,21 +132,21 @@ void setup() {
   data[0] = threshold;  
   nfcFeliCa.writeEEprom(0x37, data, 1); 
   nfcFeliCa.readEEprom(0x37, response, 1);  
-  threshold = response[0];  
-
+  threshold = response[0];
+  
   // LPCD_REFVAL_GPO_CONTROL (0x38) 
   uint8_t lpcdMode = 0x01; // 1 = LPCD SELF CALIBRATION 
   data[0] = lpcdMode; 
   nfcFeliCa.writeEEprom(0x38, data, 1); 
   nfcFeliCa.readEEprom(0x38, response, 1);  
-  lpcdMode = response[0];   
+  lpcdMode = response[0];
     
   // LPCD_GPO_TOGGLE_BEFORE_FIELD_ON (0x39) 
   uint8_t beforeFieldOn = 0xF0;   
   data[0] = beforeFieldOn;  
   nfcFeliCa.writeEEprom(0x39, data, 1); 
   nfcFeliCa.readEEprom(0x39, response, 1);  
-  beforeFieldOn = response[0];  
+  beforeFieldOn = response[0];
     
   // LPCD_GPO_TOGGLE_AFTER_FIELD_ON (0x3A)  
   uint8_t afterFieldOn = 0xF0;  
@@ -158,29 +176,109 @@ void loop() {
 
 #if WITH_PN5180 == 1
   if (digitalRead(PN5180_PIN_IRQ) == HIGH) {
+    //Serial.println("IRQ Triggered!");
     scanCard();
   }
-  nfcFeliCa.switchToLPCD(sleepTimeMS);
 #endif
 }
 
 #if WITH_PN5180 == 1
+void newscanCard(){
+//Serial.println("IRQ PIN HIGH");
+    // LPCD detection irq
+    (void)nfcFeliCa.getIRQStatus();
+    uint32_t u;
+    nfcFeliCa.readRegister(0x26, &u);
+
+    if (u == 0x10195C)
+    {
+    // turn on LPCD
+    nfcFeliCa.begin();
+    nfcFeliCa.reset();
+    if (nfcFeliCa.switchToLPCD(sleepTimeMS)) {
+      //Serial.println("switchToLPCD success");
+    } else {
+      //Serial.println("switchToLPCD failed");
+    }
+     return; 
+    }
+    
+    //Serial.print("LPCD_REFERENCE_VALUE: ");
+    //Serial.println(u, HEX);
+    //nfcFeliCa.clearIRQStatus(0xffffffff);
+    nfcFeliCa.reset(); 
+
+    // try to read the UID for an ISO-14443 card
+    uint8_t uid[10];
+    nfcFeliCa.setupRF();
+    if (nfcFeliCa.isCardPresent()) {
+      uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
+      if (uidLength > 0) {
+        //Serial.print(F("nfcFeliCa card found, UID="));
+        for (int i=0; i<uidLength; i++) {
+          //Serial.print(uid[i] < 0x10 ? " 0" : " ");
+          //Serial.print(uid[i], HEX);
+        }
+        //Serial.println();
+        //Serial.println(F("----------------------------------"));
+        delay(1000); 
+        return;
+      }
+    } 
+    // check for ISO-15693 card
+    nfc15693.reset();
+    nfc15693.setupRF();
+    // check for ICODE-SLIX2 password protected tag
+    uint8_t password[] = {0x5B, 0x6E, 0xFD, 0x7F};
+    ISO15693ErrorCode myrc = nfc15693.disablePrivacyMode(password);
+    if (ISO15693_EC_OK == myrc) {
+      //Serial.println("disablePrivacyMode successful");
+    }
+    // try to read ISO15693 inventory
+    ISO15693ErrorCode rc = nfc15693.getInventory(uid);
+    if (rc == ISO15693_EC_OK) {
+      //Serial.print(F("ISO15693 card found, UID="));
+      for (int i=0; i<8; i++) {
+        //Serial.print(uid[7-i] < 0x10 ? " 0" : " ");
+        //Serial.print(uid[7-i], HEX); // LSB is first
+      }
+      //Serial.println();
+// lock password  
+      ISO15693ErrorCode myrc = nfc15693.enablePrivacyMode(password);
+      if (ISO15693_EC_OK == myrc) {
+        //Serial.println("enablePrivacyMode successful");
+      }
+      //Serial.println();
+      //Serial.println(F("----------------------------------"));
+      delay(1000); 
+      return;
+    }
+ }
+
+
+
   void scanCard(){
-static unsigned long lastReport = 0;
-static int cardBusy = 0;
 
   /* NFC */
-  if (millis()-lastReport < cardBusy) return;
-  
-  cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
 
   // manage IRQ
-  nfcFeliCa.getIRQStatus();  
+  (void) nfcFeliCa.getIRQStatus();
   uint32_t u; 
   nfcFeliCa.readRegister(0x26, &u); 
-  nfcFeliCa.clearIRQStatus(0xffffffff); 
+    if (u == 0x10195C)
+    {
+    // turn on LPCD
+    nfcFeliCa.begin();
+    nfcFeliCa.reset();
+    if (nfcFeliCa.switchToLPCD(sleepTimeMS)) {
+      //Serial.println("switchToLPCD success");
+    } else {
+      //Serial.println("switchToLPCD failed");
+    }
+     return; 
+    }
 
  // check for FeliCa card
  nfcFeliCa.reset();  
@@ -191,15 +289,23 @@ static int cardBusy = 0;
   inputCheck();
 #endif
   nfcFeliCa.setupRF();
+  if (nfcFeliCa.isCardPresent()) {
   uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
     if (uidLength > 0) {
-      Cardio.sendState(2, uid);      
-      lastReport = millis();
-      cardBusy = 3000;
+
+        //Serial.print(F("FeliCa card found, UID="));
+        for (int i=0; i<uidLength; i++) {
+          //Serial.print(uid[i] < 0x10 ? " 0" : " ");
+          //Serial.print(uid[i], HEX);
+        }
+        //Serial.println();
+        //Serial.println(F("----------------------------------"));
+        
+      Cardio.sendState(2, uid);  
       uidLength = 0;
       return;
     }
-      
+  } 
 #if WITH_ISO14443 == 1
 // check for ISO14443 card
   nfc14443.reset();
@@ -214,10 +320,16 @@ static int cardBusy = 0;
 
   if (uidLengthMF > 0) 
   {
+            //Serial.print(F("ISO14443 card found, UID="));
+        for (int i=0; i<uidLengthMF; i++) {
+          //Serial.print(uid[i] < 0x10 ? " 0" : " ");
+          //Serial.print(uid[i], HEX);
+        }
+        //Serial.println();
+        //Serial.println(F("----------------------------------"));
+        
       uid[0] &= 0x0F; //some games won't accept FeliCa cards with a first byte higher than 0x0F  
       Cardio.sendState(2, uid);
-      lastReport = millis();
-      cardBusy = 3000;
       uidLengthMF = 0;
       return;
     }
@@ -232,20 +344,38 @@ static int cardBusy = 0;
   inputCheck();
 #endif
   nfc15693.setupRF();
+      // check for ICODE-SLIX2 password protected tag
+    uint8_t password[] = {0x5B, 0x6E, 0xFD, 0x7F};
+    ISO15693ErrorCode myrc = nfc15693.disablePrivacyMode(password);
+    if (ISO15693_EC_OK == myrc) {
+      //Serial.println("disablePrivacyMode successful");
+    }
   // try to read ISO15693 inventory
   ISO15693ErrorCode rc = nfc15693.getInventory(uid);
   if (rc == ISO15693_EC_OK ) {
+
+        //Serial.print(F("ISO15693 card found, UID="));
+        for (int i=0; i<8; i++) {
+          //Serial.print(uid[7-i] < 0x10 ? " 0" : " ");
+          //Serial.print(uid[7-i], HEX);
+        }
+        // lock password  
+      ISO15693ErrorCode myrc = nfc15693.enablePrivacyMode(password);
+      if (ISO15693_EC_OK == myrc) {
+        //Serial.println("enablePrivacyMode successful");
+      }
+      
+        //Serial.println();
+        //Serial.println(F("----------------------------------"));
+    
     for (int i=0; i<8; i++) {
       hid_data[i] = uid[7-i];
     }
     Cardio.sendState(1, hid_data);
-    lastReport = millis();
-    cardBusy = 3000;
     return;
   }
   // no card detected
-  lastReport = millis();
-  cardBusy = 200;
+  
 }
 #endif /* PN5180 */
 
