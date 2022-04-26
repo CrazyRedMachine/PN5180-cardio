@@ -62,7 +62,6 @@ uint8_t button_pins[] = {
 uint16_t sleepTimeMS = 0x3FF;
 void setup() {
   //Serial.begin(115200);
-  delay(3000);
    //Serial.println(F("PN5180 LPCD Demo Sketch"));
 
 #if WITH_NAVIGATION == 1
@@ -183,81 +182,7 @@ void loop() {
 }
 
 #if WITH_PN5180 == 1
-void newscanCard(){
-//Serial.println("IRQ PIN HIGH");
-    // LPCD detection irq
-    (void)nfcFeliCa.getIRQStatus();
-    uint32_t u;
-    nfcFeliCa.readRegister(0x26, &u);
-
-    if (u == 0x10195C)
-    {
-    // turn on LPCD
-    nfcFeliCa.begin();
-    nfcFeliCa.reset();
-    if (nfcFeliCa.switchToLPCD(sleepTimeMS)) {
-      //Serial.println("switchToLPCD success");
-    } else {
-      //Serial.println("switchToLPCD failed");
-    }
-     return; 
-    }
-    
-    //Serial.print("LPCD_REFERENCE_VALUE: ");
-    //Serial.println(u, HEX);
-    //nfcFeliCa.clearIRQStatus(0xffffffff);
-    nfcFeliCa.reset(); 
-
-    // try to read the UID for an ISO-14443 card
-    uint8_t uid[10];
-    nfcFeliCa.setupRF();
-    if (nfcFeliCa.isCardPresent()) {
-      uint8_t uidLength = nfcFeliCa.readCardSerial(uid);
-      if (uidLength > 0) {
-        //Serial.print(F("nfcFeliCa card found, UID="));
-        for (int i=0; i<uidLength; i++) {
-          //Serial.print(uid[i] < 0x10 ? " 0" : " ");
-          //Serial.print(uid[i], HEX);
-        }
-        //Serial.println();
-        //Serial.println(F("----------------------------------"));
-        delay(1000); 
-        return;
-      }
-    } 
-    // check for ISO-15693 card
-    nfc15693.reset();
-    nfc15693.setupRF();
-    // check for ICODE-SLIX2 password protected tag
-    uint8_t password[] = {0x5B, 0x6E, 0xFD, 0x7F};
-    ISO15693ErrorCode myrc = nfc15693.disablePrivacyMode(password);
-    if (ISO15693_EC_OK == myrc) {
-      //Serial.println("disablePrivacyMode successful");
-    }
-    // try to read ISO15693 inventory
-    ISO15693ErrorCode rc = nfc15693.getInventory(uid);
-    if (rc == ISO15693_EC_OK) {
-      //Serial.print(F("ISO15693 card found, UID="));
-      for (int i=0; i<8; i++) {
-        //Serial.print(uid[7-i] < 0x10 ? " 0" : " ");
-        //Serial.print(uid[7-i], HEX); // LSB is first
-      }
-      //Serial.println();
-// lock password  
-      ISO15693ErrorCode myrc = nfc15693.enablePrivacyMode(password);
-      if (ISO15693_EC_OK == myrc) {
-        //Serial.println("enablePrivacyMode successful");
-      }
-      //Serial.println();
-      //Serial.println(F("----------------------------------"));
-      delay(1000); 
-      return;
-    }
- }
-
-
-
-  void scanCard(){
+void scanCard(){
 
   /* NFC */
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
