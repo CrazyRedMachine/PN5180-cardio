@@ -177,6 +177,7 @@ void loop() {
   if (digitalRead(PN5180_PIN_IRQ) == HIGH) {
     //Serial.println("IRQ Triggered!");
     scanCard();
+    nfcFeliCa.switchToLPCD(sleepTimeMS);
   }
 #endif
 }
