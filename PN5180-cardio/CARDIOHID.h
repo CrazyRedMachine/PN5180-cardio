@@ -1,5 +1,19 @@
 #include "HID.h"
 
+#if defined(ARDUINO_ARCH_SAM)
+#define EPTYPE_DESCRIPTOR_SIZE      uint32_t
+#define USB_EP_SIZE                 64
+#define TRANSFER_PGM                0x80
+#define USB_SendControl             USBD_SendControl
+#define USB_RecvControl             USBD_RecvControl
+#define USB_Recv                    USBD_Recv
+#define USB_Send                    USBD_Send
+#define USB_Flush                   USBD_Flush
+#define HID_REPORT_TYPE_INPUT       1
+#define HID_REPORT_TYPE_OUTPUT      2
+#define HID_REPORT_TYPE_FEATURE     3
+#endif
+
 #define STRING_ID_Base 4
 
 class CARDIOHID_ : public PluggableUSBModule {
