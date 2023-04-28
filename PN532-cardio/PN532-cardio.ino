@@ -14,17 +14,17 @@ Cardio_ Cardio;
 #if WITH_KEYPAD == 1
   /* Keypad declarations */
   const byte ROWS = 4;
-  const byte COLS = 3;
+  const byte COLS = 4;
   /* This is to use the toprow keys */
   char numpad[ROWS][COLS] = {
-   {'7', '8', '9'},
-   {'4', '5', '6'},
-   {'1', '2', '3'},
-   {'0', ',', '\337'}
+   {'7', '8', '9', 'T'},
+   {'4', '5', '6', 'S'},
+   {'1', '2', '3', 'O'},
+   {',', '0', '\337', 'P'}
   };
 
   byte rowPins[ROWS] = {PIN_ROW1, PIN_ROW2, PIN_ROW3, PIN_ROW4}; //connect to the row pinouts of the keypad
-  byte colPins[COLS] = {PIN_COL1, PIN_COL2, PIN_COL3}; //connect to the column pinouts of the keypad
+  byte colPins[COLS] = {PIN_COL1, PIN_COL2, PIN_COL3, PIN_COL4}; //connect to the column pinouts of the keypad
   Keypad kpd = Keypad( makeKeymap(numpad), rowPins, colPins, ROWS, COLS );
 #endif
  
