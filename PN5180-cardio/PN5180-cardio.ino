@@ -56,6 +56,8 @@ void setup() {
   uint8_t eepromVersion[2];
   nfcFeliCa.readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
   nfcFeliCa.setupRF();
+
+  pinMode(SCAN_BUTTON_PIN, INPUT_PULLUP);
 }
 
 unsigned long lastReport = 0;
@@ -74,7 +76,16 @@ void loop() {
   cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t hid_data[8] = {0,0,0,0,0,0,0,0};
+
+  uint8_t virt_uid[8] = SCAN_BUTTON_UUID;
   
+  if ( digitalRead(SCAN_BUTTON_PIN) == LOW )
+  {
+      Cardio.sendState(2, virt_uid);
+      lastReport = millis();
+      cardBusy = 3000;
+      return;
+  }
 #if WITH_ISO14443 == 1
 // check for ISO14443 card
   nfc14443.reset();

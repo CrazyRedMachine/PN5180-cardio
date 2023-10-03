@@ -9,6 +9,9 @@
 #define PN5180_PIN_BUSY 9
 #define PN5180_PIN_RST  7
 
+#define SCAN_BUTTON_PIN 8
+#define SCAN_BUTTON_UUID {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}
+
 /* Use a matrix keypad */
 #define WITH_KEYPAD 1
   #define PIN_ROW1 1
