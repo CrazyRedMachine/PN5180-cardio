@@ -21,6 +21,22 @@ static const uint8_t PROGMEM hid_report[] = {
 0x75, 0x08,        //   Report Size (8)
 0x95, 0x08,        //   Report Count (8)
 0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0x85, 0x03,        //   Report ID (3)
+0x06, 0xCA, 0xFF,  //   Usage Page (Vendor Defined 0xFFCA)
+0x09, 0x43,        //   Usage (0x43)
+0x15, 0x00,        //   Logical Minimum (0)
+0x25, 0xFF,        //   Logical Maximum (-1)
+0x75, 0x08,        //   Report Size (8)
+0x95, 0x04,        //   Report Count (4)
+0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0x85, 0x04,        //   Report ID (4)
+0x06, 0xCA, 0xFF,  //   Usage Page (Vendor Defined 0xFFCA)
+0x09, 0x44,        //   Usage (0x44)
+0x15, 0x00,        //   Logical Minimum (0)
+0x25, 0xFF,        //   Logical Maximum (-1)
+0x75, 0x08,        //   Report Size (8)
+0x95, 0x04,        //   Report Count (7)
+0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 0xC0,              // End Collection
 // 42 bytes
 };
@@ -47,10 +63,10 @@ static bool USB_SendStringDescriptor(const char *string_P, uint8_t string_len, u
 /* HID descriptor strings */
 #if CUSTOM_VIDPID == 1
 const DeviceDescriptor PROGMEM USB_DeviceDescriptorIAD =
-  D_DEVICE(0xEF,0x02,0x01,64,0x1ccf,0x5252,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0xEF,0x02,0x01,64,0x1ccf,0x5253,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 #endif
 const char* const PROGMEM String_Manufacturer = "CrazyRedMachine";
-const char* const PROGMEM String_Product = "CardIO";
+const char* const PROGMEM String_Product = "CardIO+";
 #if CARDIO_ID == 1
 const char* const PROGMEM String_Serial = "CARDIOP1";
 #else
@@ -135,9 +151,10 @@ bool CARDIOHID_::setup(USBSetup& setup) {
 
 int CARDIOHID_::sendState(uint8_t type, uint8_t *value) {
     uint8_t data[9];
-
+    uint8_t datalen = 9;
     data[0] = type;
-	memcpy(data+1, value, 8);
-
-    return USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, 9);
+    memcpy(data+1, value, 8);
+    if ( type == 3 ) datalen = 5;
+    if ( type == 4 ) datalen = 8;
+    return USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, datalen);
 }
